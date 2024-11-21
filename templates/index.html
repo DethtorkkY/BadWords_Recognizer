@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Speech Profanity Checker</title>
+</head>
+<body>
+    <div class="container">
+        <h1>Проверка на маты</h1>
+        <p>Нажмите на кнопку, чтобы записать речь:</p>
+        <button id="record-btn">Начать запись</button>
+        <p id="result"></p>
+    </div>
+    <script>
+        const button = document.getElementById('record-btn');
+        const result = document.getElementById('result');
+
+        button.addEventListener('click', async () => {
+            result.textContent = 'Запись... Подождите.';
+            const response = await fetch('/process-audio', {
+                method: 'POST'
+            });
+            const data = await response.json();
+            if (data.success) {
+                result.textContent = data.message;
+            } else {
+                result.textContent = 'Ошибка: ' + data.error;
+            }
+        });
+    </script>
+</body>
+</html>
