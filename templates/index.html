@@ -13,21 +13,51 @@
         <button id="record-btn">Начать запись</button>
         <p id="result"></p>
     </div>
+
     <script>
         const button = document.getElementById('record-btn');
         const result = document.getElementById('result');
 
+        // Функция для записи аудио
         button.addEventListener('click', async () => {
             result.textContent = 'Запись... Подождите.';
-            const response = await fetch('/process-audio', {
-                method: 'POST'
-            });
-            const data = await response.json();
-            if (data.success) {
-                result.textContent = data.message;
-            } else {
-                result.textContent = 'Ошибка: ' + data.error;
-            }
+            
+            // Доступ к микрофону
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            let audioChunks = [];
+
+            mediaRecorder.start();
+
+            // Сбор данных аудио
+            mediaRecorder.ondataavailable = event => {
+                audioChunks.push(event.data);
+            };
+
+            // Остановка записи через 5 секунд
+            setTimeout(() => {
+                mediaRecorder.stop();
+            }, 5000);
+
+            // Обработка завершённой записи
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                const formData = new FormData();
+                formData.append('audio', audioBlob);
+
+                // Отправка аудио на сервер
+                const response = await fetch('/process-audio', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    result.textContent = data.message;
+                } else {
+                    result.textContent = 'Ошибка: ' + data.error;
+                }
+            };
         });
     </script>
 </body>
